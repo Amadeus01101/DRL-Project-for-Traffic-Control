@@ -1,0 +1,5 @@
+Reinforce 1 echec trop proche de l'ISDO
+
+Reinforce 2 echec pas de discrétisation de l'espace
+
+Reinforce 3 succes

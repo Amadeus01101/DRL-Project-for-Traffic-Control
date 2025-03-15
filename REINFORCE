@@ -1,1 +1,112 @@
+"""REINFORCE AGENT IMPLEMENTATION"""
+
+
+import torch
+import torch.nn as nn
+import torch.optim as optim
+import torch.nn.functional as F
+import gymnasium as gym
+
+
+# Hyperparameters
+gamma = 0.99  # Discount factor
+lr = 0.01  # Learning rate
+num_episodes = 2000 # nb of learning episodes
+
+class PolicyNetwork(nn.Module):
+    def __init__(self, state_dim, action_dim):
+        super(PolicyNetwork, self).__init__()
+        self.fc1 = nn.Linear(state_dim, 128)
+        self.fc2 = nn.Linear(128, action_dim)
+
+    def forward(self, state):
+        x = F.relu(self.fc1(state))  # Activation function ReLU
+        action_probs = F.softmax(self.fc2(x), dim=-1)  # Converts raw scores to a proba distribution over actions
+        return action_probs
+
+
+class ReinforceAgent:
+    def __init__(self, env, gamma, lr):
+        self.env = env
+        self.gamma = gamma
+        self.lr = lr
+
+        self.state_dim = env.observation_space.shape[0]
+        self.action_dim = env.action_space.n
+        self.policy = PolicyNetwork(self.state_dim, self.action_dim)
+        self.optimizer = optim.Adam(self.policy.parameters(), lr=lr)
+
+    def generate_episode(self, render = True):
+        """
+        Runs one full episode and stores (state, action, reward)
+        """
+        log_probs = [] # log of proba of chosen action
+        rewards = [] # reward at each step of the episode
+        state = self.env.reset()[0]  # begin new episode (gets initial state)
+        done = False
+
+        while not done: # runs loop until episode is done
+            if render:
+                self.env.render()  # to visalize the environment
+
+            state = torch.tensor(state, dtype=torch.float32) # converts state into PyTorch tensor
+            action_probs = self.policy(state) # passes state through agent's policy network
+            action_dist = torch.distributions.Categorical(action_probs) # each action is asssigned a proba given by action_probs
+            action = action_dist.sample() # randomly selects an action based on the probability distribution
+
+            log_probs.append(action_dist.log_prob(action)) # store the log of that proba to then compute the gradient
+            state, reward, done, _, _ = self.env.step(action.item()) # taking action in the actual environment
+            rewards.append(reward) # store the associated reward
+
+        return log_probs, rewards
+
+    def compute_discounted_returns(self, rewards):
+        """
+        Computes discounted reward G for each time step.
+        """
+        G = []
+        discounted_sum = 0
+        for r in reversed(rewards):
+            discounted_sum = r + self.gamma * discounted_sum
+            G.insert(0, discounted_sum)  # insert at the beginning of the list
+
+        G = torch.tensor(G, dtype=torch.float32)  # convert to PyTorch tensor
+        return G
+
+    def update_policy(self, log_probs, returns):
+        """
+        Computes the policy gradient loss and updates the policy network.
+        """
+        loss = 0 # total loss over the episode is initialized at 0
+        # policy gradient theorem :
+        for log_prob, G in zip(log_probs, returns):
+            loss += -log_prob * G
+
+        self.optimizer.zero_grad() # reset gradient to zero, clear out previously accumulated gradient by PyTorch
+        loss.backward()  # compute gradients = backpropagation
+        self.optimizer.step()  # update policy parameters using gradient descent
+
+    def train(self, num_episodes):
+        """
+        Training loop for the REINFORCE algorithm.
+        """
+        for episode in range(num_episodes):
+            log_probs, rewards = self.generate_episode()  # generate an episode
+            returns = self.compute_discounted_returns(rewards)  # Compute returns
+            self.update_policy(log_probs, returns)  # Apply policy gradient update
+
+            if episode % 10 == 0: #display the reward after every 10 episodes generated
+                print(f"Episode {episode}: Total Reward = {sum(rewards)}")
+
+### RUNNING CARTPOLE BALANCING SIMULATION ###
+
+env = gym.make("CartPole-v1", render_mode="human")  # Rend visible l'environnement
+agent = ReinforceAgent(env, gamma=0.99, lr=0.01)  # Learning rate plus bas
+agent.train(num_episodes=2000)  # Entraînement
+
+agent.generate_episode(render=True)  # Test avec visualisation
+env.close()
+
+
+
 

@@ -36,7 +36,7 @@ class ReinforceAgent:
         self.policy = PolicyNetwork(self.state_dim, self.action_dim)
         self.optimizer = optim.Adam(self.policy.parameters(), lr=lr)
 
-    def generate_episode(self, render = True):
+    def generate_episode(self, render = False):
         """
         Runs one full episode and stores (state, action, reward)
         """
@@ -44,8 +44,9 @@ class ReinforceAgent:
         rewards = [] # reward at each step of the episode
         state = self.env.reset()[0]  # begin new episode (gets initial state)
         done = False
+        truncated = False
 
-        while not done: # runs loop until episode is done
+        while not (done or truncated): # runs loop until episode is done
             if render:
                 self.env.render()  # to visalize the environment
 
@@ -55,7 +56,7 @@ class ReinforceAgent:
             action = action_dist.sample() # randomly selects an action based on the probability distribution
 
             log_probs.append(action_dist.log_prob(action)) # store the log of that proba to then compute the gradient
-            state, reward, done, _, _ = self.env.step(action.item()) # taking action in the actual environment
+            state, reward, done, truncated, _ = self.env.step(action.item()) # taking action in the actual environment
             rewards.append(reward) # store the associated reward
 
         return log_probs, rewards
@@ -86,27 +87,46 @@ class ReinforceAgent:
         loss.backward()  # compute gradients = backpropagation
         self.optimizer.step()  # update policy parameters using gradient descent
 
-    def train(self, num_episodes):
+
+    def train(self, num_episodes, save_path="reinforce_agent.pth"):
         """
         Training loop for the REINFORCE algorithm.
         """
+        best_reward = -float("inf")  # Track the best total reward
+
         for episode in range(num_episodes):
-            log_probs, rewards = self.generate_episode()  # generate an episode
-            returns = self.compute_discounted_returns(rewards)  # Compute returns
-            self.update_policy(log_probs, returns)  # Apply policy gradient update
+            log_probs, rewards = self.generate_episode()
+            returns = self.compute_discounted_returns(rewards)
+            self.update_policy(log_probs, returns)
 
-            if episode % 10 == 0: #display the reward after every 10 episodes generated
-                print(f"Episode {episode}: Total Reward = {sum(rewards)}")
+            total_reward = sum(rewards)
+            if episode % 10 == 0:
+                print(f"Episode {episode}: Total Reward = {total_reward}")
 
-### RUNNING CARTPOLE BALANCING SIMULATION ###
+            # Save the best performing model
+            if total_reward > best_reward:
+                best_reward = total_reward
+                torch.save(self.policy.state_dict(), save_path)
+                print(f"Model saved at Episode {episode} with Reward {best_reward}")
 
-env = gym.make("CartPole-v1", render_mode="human")  # Rend visible l'environnement
-agent = ReinforceAgent(env, gamma=0.99, lr=0.01)  # Learning rate plus bas
-agent.train(num_episodes=2000)  # Entraînement
+    def load_model(self, save_path="reinforce_agent.pth"):
+        self.policy.load_state_dict(torch.load(save_path))
+        print("Model loaded successfully!")
 
-agent.generate_episode(render=True)  # Test avec visualisation
+
+### TRAIN MODEL AND SAVE IT ### (Uncomment and run below to train stop when reward is at 10.000)
+
+#env = gym.make("CartPole-v1", render_mode=None)  # Rend visible l'environnement
+#env._max_episode_steps = 10000
+#agent = ReinforceAgent(env, gamma=0.99, lr=0.01)  # Learning rate plus bas
+#agent.train(num_episodes=100000)  # Entraînement
+#agent.generate_episode(render=False)  # Test avec visualisation
+
+### VISUALIZE SAVED MODEL IN VIRTUAL ENVIRONMENT ### (Uncomment and run below to visualize the trained agent)
+
+env = gym.make("CartPole-v1", render_mode="human")
+agent = ReinforceAgent(env, gamma=0.99, lr=0.01)
+agent.load_model("reinforce_agent.pth")  # Load trained model
+agent.generate_episode(render=True)  # Run with visualization
+
 env.close()
-
-
-
-

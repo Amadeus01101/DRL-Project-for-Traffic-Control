@@ -14,12 +14,8 @@ Deep Reinforcement Learning – Intelligent Traffic Signal Control with Partial 
   </em>
 </p>
 <p align="center">
-
-  
-<img width="410" height="123" alt="images" src="https://github.com/user-attachments/assets/43281565-30d0-4af2-8d5b-e830d73d8e99" />
+  <img width="410" height="123" alt="images" src="https://github.com/user-attachments/assets/43281565-30d0-4af2-8d5b-e830d73d8e99" />
 </p>
-
-
 
 ## Overview
 
@@ -43,7 +39,6 @@ permitted conflicting left turns, representative of common real-world layouts.
 
 <img width="551" height="213" alt="Screenshot 2025-12-12 at 08 59 47" src="https://github.com/user-attachments/assets/e1486903-d483-48a9-8ab3-1e32907c0f33" />
 
-
 The agent alternates between two traffic signal phases controlling the
 north–south and east–west axes.
 
@@ -54,12 +49,28 @@ north–south and east–west axes.
 The intersection is simulated using **SUMO** and visualized via **SUMO-GUI**,
 allowing qualitative inspection of the learned control policy.
 
-
 <img width="479" height="249" alt="Screenshot 2025-12-12 at 08 59 53" src="https://github.com/user-attachments/assets/30e469ae-ce9f-4755-ac33-2b406992dfd8" />
-
 
 The environment is connected to Python through **TraCI**, enabling real-time
 observation of vehicle states and direct traffic light control.
+
+---
+
+## Prerequisites & Installation
+
+Before running the project, ensure you have the required simulation software and Python dependencies installed.
+
+1. **Install SUMO:** Download and install [SUMO (Simulation of Urban MObility)](https://eclipse.dev/sumo/). Make sure the `SUMO_HOME` environment variable is properly configured on your system.
+2. **Install Python Dependencies:**
+```bash
+# Clone the repository and navigate into it
+git clone [https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git](https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git)
+cd YOUR_REPO_NAME
+
+# Install standard RL and data science libraries (PyTorch, TensorBoard, etc.)
+# pip install -r requirements.txt 
+```
+*(Note: Replace `YOUR_USERNAME/YOUR_REPO_NAME` with your actual GitHub repository URL).*
 
 ---
 
@@ -95,6 +106,21 @@ traffic signals at the intersection.
   - Congestion-aware action triggering
   - Safety constraints on phase switching
 
+**To run the SUMO traffic control experiment:**
+```bash
+# Navigate to the specific project folder
+cd Traffic_control
+
+# Train and save the reinforce agent
+python train.py
+
+# Observe the trained agent in SUMO-GUI
+python observe.py 
+
+# Visualize cumulated rewards over episodes with TensorBoard
+tensorboard --logdir runs/reinforce
+```
+
 ---
 
 ## Reward Design
@@ -122,13 +148,12 @@ These metrics are logged during training and used for quantitative evaluation.
 
 ## Results
 
-###KPI Statistics
+### KPI Statistics
 
 Comparison of REINFORCE against baseline controllers
 (DQN, MaxPressure, SOTL):
 
 <img width="564" height="312" alt="Screenshot 2025-12-12 at 08 59 59" src="https://github.com/user-attachments/assets/b47cbbd0-3948-41df-8864-082da719e382" />
-
 
 ### Comparative Performance
 

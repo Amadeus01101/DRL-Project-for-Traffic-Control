@@ -2,15 +2,15 @@
 
 Commands 
 
-Observe initial intersection without control (replace with path to realistic_intersection folder): 
+Observe initial intersection without control : 
 
-	sumo-gui -c /Users/antoinechosson/Desktop/realistic_intersection/intersection.sumocfg
+	sumo-gui -c intersection/1tls_2x2.sumocfg
 
 <img width="653" alt="Screenshot 2025-04-10 at 09 51 56" src="https://github.com/user-attachments/assets/d4d84d75-17b6-4316-81f1-7895718ce602" />
 
 Locate into project location :
 
-  	cd ~/PycharmProjects/SUMO_RL
+  	cd Traffic_control
 
 Train and save your reinforce agent : 
 
